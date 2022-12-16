@@ -38,6 +38,7 @@ conda activate santa2022
 On Linux and macOSndows:
 ```
 source activate santa2022
+```
 
 # Description
 
