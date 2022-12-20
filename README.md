@@ -24,11 +24,11 @@ cd santa2022
 4. ### Install conda environment
 On Windows:
 ```
-conda env create -f environments/santa2022_env_windows.yml
+conda env create -f environments/santa2022_env_windows_droplet.yml
 ```
 On Linux:
 ```
-conda env create -f environments/santa2022_env_windows.yml
+conda env create -f environments/santa2022_env_linux.yml
 ```
 5. ### Activate conda environment
 On Windows:
