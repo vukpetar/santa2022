@@ -37,15 +37,24 @@ class Santa2022Environment(gym.Env):
         super(Santa2022Environment, self).__init__()
         self.new_confs = []
         self.max_iter = max_iter
+        self.reconfiguration_costs = []
         self.current_step = 0
         self.total_cost = 0
         self.image = image
         self.is_visited_array = np.zeros(self.image.shape[:2], dtype=np.bool_)
         self.is_visited_array[128, 128] = 1
+        self.double_visit_count = 0
         self.obs_shape = [3**len(starting_conf), 3]
         self.starting_conf = starting_conf
         self.conf = starting_conf.copy()
+        self.obs = [[]]*(3**len(starting_conf))
+        self.new_confs = [[]]*(3**len(starting_conf))
         self.obs_matrix = self.get_observation()
+
+        confs = get_possible_confs(self.conf)
+        for new_conf in product(*confs):
+            r_cost = reconfiguration_cost(self.conf, new_conf)
+            self.reconfiguration_costs.append(r_cost)
         
         self.action_space = spaces.Discrete(2**8)
         
@@ -61,6 +70,7 @@ class Santa2022Environment(gym.Env):
         reward = cost + 3
         
         if self.is_visited_array[new_pos]:
+            self.double_visit_count += 1
             reward -= 30
         
         return reward
@@ -79,14 +89,16 @@ class Santa2022Environment(gym.Env):
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
         old_conf = self.conf.copy()
-        new_conf = self._take_action(action)
-        new_pos = cartesian_to_array(*transform_conf_to_pos(new_conf), self.image.shape)
+        new_conf = self._take_action(action).copy()
+        new_pos = cartesian_to_array(*get_position(np.asarray(new_conf)))
         self.conf = new_conf
-        cost = step_cost(old_conf, new_conf, self.image)
+        cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
         self.total_cost += cost
         
         is_done = np.sum(self.is_visited_array == 0) == 0
         done = is_done or (self.current_step > self.max_iter)
+
+        done = done or (self.double_visit_count > (self.current_step // 132))
         
         reward = self.get_reward(cost, new_pos)
         obs = self.get_observation()
@@ -119,6 +131,7 @@ class Santa2022Environment(gym.Env):
         self.total_cost = 0
         self.is_visited_array = np.zeros(self.image.shape[:2])
         self.is_visited_array[128, 128] = 1
+        self.double_visit_count = 0
         self.conf = self.starting_conf
         self.obs_matrix = self.get_observation()
         
@@ -151,18 +164,14 @@ class Santa2022Environment(gym.Env):
         return render_img
     
     def get_observation(self):
-        observation = []
-        self.new_confs = []
 
         confs = get_possible_confs(self.conf)
-        for new_conf in product(*confs):
-            self.new_confs.append(list(new_conf))
+        from_position = cartesian_to_array(*get_position(np.asarray(self.conf)))
+        for index, (new_conf, r_cost) in enumerate(zip(product(*confs), self.reconfiguration_costs)):
+            self.new_confs[index] = list(new_conf)
+            to_position = cartesian_to_array(*get_position(np.asarray(new_conf)))
 
-            from_position = cartesian_to_array(*transform_conf_to_pos(self.conf), self.image.shape)
-            to_position = cartesian_to_array(*transform_conf_to_pos(new_conf), self.image.shape)
-
-            r_cost = reconfiguration_cost(self.conf, new_conf)
             c_cost = color_cost(from_position, to_position, self.image)
-            observation.append([r_cost, c_cost, self.is_visited_array[to_position]])
+            self.obs[index] = [r_cost, c_cost, self.is_visited_array[to_position]]
             
-        return observation
+        return self.obs

@@ -3,6 +3,7 @@ from typing import Union, List, Tuple, Iterator
 
 import numpy as np
 import pandas as pd
+import numba as nb
 
 
 def df_to_image(df: pd.DataFrame) -> np.array:
@@ -41,8 +42,13 @@ def transform_conf_to_pos(config: Union[List[List[int]], np.array]) -> List[int]
     
     position = reduce(lambda p, q: (p[0] + q[0], p[1] + q[1]), config, (0, 0))
     return position
-        
-def cartesian_to_array(x: int, y: int, shape: np.array) -> Tuple[int]:
+
+@nb.njit
+def get_position(config):
+    return config.sum(0)
+
+@nb.njit 
+def cartesian_to_array(x: int, y: int) -> Tuple[int]:
     """Transform cartesian coordinates to python image coordiantes
     (Example: cartesian (0, 0) is center of image but in python this is (image.shape[0] // 2, image.shape[1] // 2)).
 
@@ -58,11 +64,8 @@ def cartesian_to_array(x: int, y: int, shape: np.array) -> Tuple[int]:
         position (Tuple[int]): List of x and y coordinates.
     """
 
-    m, n = shape[:2]
-    i = (n - 1) // 2 - y
-    j = (n - 1) // 2 + x
-    if i < 0 or i >= m or j < 0 or j >= n:
-        raise ValueError("Coordinates not within given dimensions.")
+    i = 128 - y
+    j = 128 + x
     return i, j
 
 def reconfiguration_cost(from_config: List[List[int]], to_config: List[List[int]]) -> int:
@@ -80,6 +83,7 @@ def reconfiguration_cost(from_config: List[List[int]], to_config: List[List[int]
     cost = np.sqrt(diffs.sum())
     return cost
 
+@nb.njit
 def color_cost(from_position: List[int], to_position: List[int], image: np.array, color_scale: int=3.0) -> int:
     """Calculate color cost from positions.
 
@@ -105,8 +109,8 @@ def color_cost_from_conf(from_config: List[List[int]], to_config: List[List[int]
         cost (int): Color cost.
     """
 
-    from_position = cartesian_to_array(*transform_conf_to_pos(from_config), image.shape)
-    to_position = cartesian_to_array(*transform_conf_to_pos(to_config), image.shape)
+    from_position = cartesian_to_array(*get_position(from_config))
+    to_position = cartesian_to_array(*get_position(to_config))
     cost = np.abs(image[to_position] - image[from_position]).sum() * color_scale
     return cost
 
@@ -121,8 +125,8 @@ def step_cost(from_config: List[List[int]], to_config: List[List[int]], image: n
     Returns:
         cost (int): Step cost.
     """
-    from_position = cartesian_to_array(*transform_conf_to_pos(from_config), image.shape)
-    to_position = cartesian_to_array(*transform_conf_to_pos(to_config), image.shape)
+    from_position = cartesian_to_array(*get_position(from_config))
+    to_position = cartesian_to_array(*get_position(to_config))
     cost = (
         reconfiguration_cost(from_config, to_config) +
         color_cost(from_position, to_position, image)
@@ -221,8 +225,8 @@ def get_possible_confs(conf: List[List[int]]) -> List[List[List[int]]]:
                 new_entry_2 = [conf_entry[0]-1, conf_entry[1]]
                 new_entry_3 = [conf_entry[0], conf_entry[1]+1]
             else:
-                new_entry_2 = [conf_entry[0]-1, conf_entry[1]]
-                new_entry_3 = [conf_entry[0], conf_entry[1]+1]
+                new_entry_2 = [conf_entry[0]+1, conf_entry[1]]
+                new_entry_3 = [conf_entry[0], conf_entry[1]-1]
 
         elif abs(conf_entry[0]) == max_conf_value:
             new_entry_2 = [conf_entry[0], conf_entry[1]-1]
