@@ -1,5 +1,6 @@
 .vscode/
 .models/
+.videos/
 
 __pycache__/
 *.py[cod]
