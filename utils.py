@@ -1,10 +1,16 @@
 from functools import reduce
 from typing import Union, List, Tuple, Iterator
+import base64
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import numba as nb
 
+import gym
+from stable_baselines3.common.vec_env import VecVideoRecorder, DummyVecEnv
+from stable_baselines3.ppo.ppo import PPO
+from IPython import display as ipythondisplay
 
 def df_to_image(df: pd.DataFrame) -> np.array:
     """Transform configuration to positions where the image centre is (0, 0) dot.
@@ -239,3 +245,48 @@ def get_possible_confs(conf: List[List[int]]) -> List[List[List[int]]]:
         new_confs.append([new_entry_1, new_entry_2, new_entry_3])
         
     return new_confs
+
+def record_video(
+    new_env: gym.Env,
+    model: PPO,
+    video_length: int=500,
+    prefix: str='',
+    video_folder: str='./videos/'
+):
+    """
+    :param new_env: (gym.Env)
+    :param model: (RL model)
+    :param video_length: (int)
+    :param prefix: (str)
+    :param video_folder: (str)
+    """
+    eval_env = DummyVecEnv([lambda: new_env])
+    # Start the video at step=0 and record 500 steps
+    eval_env = VecVideoRecorder(eval_env, video_folder=video_folder,
+                              record_video_trigger=lambda step: step == 0, video_length=video_length,
+                              name_prefix=prefix)
+
+    obs = eval_env.reset()
+    for _ in range(video_length):
+        action, _ = model.predict(obs)
+        obs, _, _, _ = eval_env.step(action)
+
+
+    # Close the video recorder
+    eval_env.close()
+
+def show_videos(video_path: str='', prefix: str=''):
+    """
+    Taken from https://github.com/eleurent/highway-env
+
+    :param video_path: (str) Path to the folder containing videos
+    :param prefix: (str) Filter the video, showing only the only starting with this prefix
+    """
+    html = []
+    for mp4 in Path(video_path).glob("{}*.mp4".format(prefix)):
+        video_b64 = base64.b64encode(mp4.read_bytes())
+        html.append('''<video alt="{}" autoplay 
+                    loop controls style="height: 400px;">
+                    <source src="data:video/mp4;base64,{}" type="video/mp4" />
+                </video>'''.format(mp4, video_b64.decode('ascii')))
+    ipythondisplay.display(ipythondisplay.HTML(data="<br>".join(html)))
