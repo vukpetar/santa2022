@@ -97,10 +97,9 @@ class Santa2022Environment(gym.Env):
         
         is_done = np.sum(self.is_visited_array == 0) == 0
         done = is_done or (self.current_step > self.max_iter)
-
-        done = done or (self.double_visit_count > (self.current_step // 132))
         
         reward = self.get_reward(cost, new_pos)
+        done = done or (self.double_visit_count > (self.current_step // 7))
         obs = self.get_observation()
         self.is_visited_array[new_pos] = 1
         
