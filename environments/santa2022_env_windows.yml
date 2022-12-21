@@ -6,7 +6,7 @@ channels:
 dependencies:
   - python=3.9
   - pylint==2.15.9
-  - pywin32==302
+  - pywin32==228
   - numpy==1.23.5
   - scipy==1.9.3
   - Cython==0.29.32
@@ -18,4 +18,6 @@ dependencies:
       - typing_extensions==4.4.0
       - scikit-learn==1.2.0
       - stable-baselines3==1.6.2
+      - sb3-contrib==1.6.2
       - numba==0.56.4
+      - imageio-ffmpeg-0.4.7
