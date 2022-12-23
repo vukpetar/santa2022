@@ -23,7 +23,7 @@ def df_to_image(df: pd.DataFrame) -> np.array:
     """
 
     side = int(len(df) ** 0.5)  # assumes a square image
-    image = df.set_index(['x', 'y']).to_numpy().reshape(side, side, -1)
+    image = df.set_index(["x", "y"]).to_numpy().reshape(side, side, -1)
     return image
 
 def transform_conf_to_pos(config: Union[List[List[int]], np.array]) -> List[int]:
@@ -54,14 +54,15 @@ def get_position(config):
     return config.sum(0)
 
 @nb.njit 
-def cartesian_to_array(x: int, y: int) -> Tuple[int]:
+def cartesian_to_array(x: int, y: int, center_x: int=128, center_y: int=128) -> Tuple[int]:
     """Transform cartesian coordinates to python image coordiantes
     (Example: cartesian (0, 0) is center of image but in python this is (image.shape[0] // 2, image.shape[1] // 2)).
 
     Args:
         x (int): x coord
         y (int): y coord
-        shape (np.array): image shape
+        center_x (int): Image center by x-axis
+        center_y (int): Image center by x-axis
 
     Raises:
         ValueError: Coordinates not within given image dimensions.
@@ -70,8 +71,8 @@ def cartesian_to_array(x: int, y: int) -> Tuple[int]:
         position (Tuple[int]): List of x and y coordinates.
     """
 
-    i = 128 - y
-    j = 128 + x
+    i = center_x - y
+    j = center_y + x
     return i, j
 
 def reconfiguration_cost(from_config: List[List[int]], to_config: List[List[int]]) -> int:
@@ -250,8 +251,8 @@ def record_video(
     new_env: gym.Env,
     model: PPO,
     video_length: int=500,
-    prefix: str='',
-    video_folder: str='./videos/'
+    prefix: str="",
+    video_folder: str="./videos/"
 ):
     """
     :param new_env: (gym.Env)
@@ -275,7 +276,7 @@ def record_video(
     # Close the video recorder
     eval_env.close()
 
-def show_videos(video_path: str='', prefix: str=''):
+def show_videos(video_path: str="", prefix: str=""):
     """
     Taken from https://github.com/eleurent/highway-env
 
@@ -285,8 +286,8 @@ def show_videos(video_path: str='', prefix: str=''):
     html = []
     for mp4 in Path(video_path).glob("{}*.mp4".format(prefix)):
         video_b64 = base64.b64encode(mp4.read_bytes())
-        html.append('''<video alt="{}" autoplay 
+        html.append("""<video alt="{}" autoplay 
                     loop controls style="height: 400px;">
                     <source src="data:video/mp4;base64,{}" type="video/mp4" />
-                </video>'''.format(mp4, video_b64.decode('ascii')))
+                </video>""".format(mp4, video_b64.decode("ascii")))
     ipythondisplay.display(ipythondisplay.HTML(data="<br>".join(html)))

@@ -1,6 +1,4 @@
 .vscode/
-.models/
-.videos/
 
 __pycache__/
 *.py[cod]
@@ -13,6 +11,7 @@ __pycache__/
 .ipynb_checkpoints
 
 models/
+videos/
 
 *.log
 *.dccache
