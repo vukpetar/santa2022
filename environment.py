@@ -73,6 +73,10 @@ class Santa2022Environment(gym.Env):
             reward = -0.1
         else:
             reward = -1.0
+
+        if np.sum(self.is_visited_array == 0) == 0:
+            reward += 10
+        
         return reward
 
 
@@ -130,8 +134,10 @@ class Santa2022Environment(gym.Env):
         
         self.current_step = 0
         self.total_cost = 0
-        self.is_visited_array = np.zeros(self.image.shape[:2])
-        self.image = self.original_image.copy()
+        if np.sum(self.is_visited_array == 0) == 0:
+            self.is_visited_array = np.zeros(self.image.shape[:2])
+            self.image = self.original_image.copy()
+
 
         conf_index = np.random.randint(low=0, high=len(self.starting_confs))
         self.conf = self.starting_confs[conf_index].copy()
