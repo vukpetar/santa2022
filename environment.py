@@ -54,7 +54,7 @@ class Santa2022Environment(gym.Env):
         
         self.observation_space = spaces.Dict({
             'image': spaces.Box(
-                low=-1.0, high=1.0, shape=self.image.shape, dtype=np.float32
+                low=-2.0, high=1.0, shape=self.image.shape, dtype=np.float32
             ),
             'conf': spaces.Box(low=0.0, high=64.0, shape=(self.conf_len*2,), dtype=np.float32)
         })
@@ -102,7 +102,7 @@ class Santa2022Environment(gym.Env):
         
         reward = self.get_reward(cost)
         if self.is_visited_array[new_pos] == 1:
-            self.image[new_pos, :] = -1.0
+            self.image[new_pos, :] = -2.0
         else:
             self.is_visited_array[new_pos] = 1
         obs = self.get_observation()
@@ -137,10 +137,9 @@ class Santa2022Environment(gym.Env):
         if np.sum(self.is_visited_array == 0) == 0:
             self.is_visited_array = np.zeros(self.image.shape[:2])
             self.image = self.original_image.copy()
+            conf_index = np.random.randint(low=0, high=len(self.starting_confs))
+            self.conf = self.starting_confs[conf_index].copy()
 
-
-        conf_index = np.random.randint(low=0, high=len(self.starting_confs))
-        self.conf = self.starting_confs[conf_index].copy()
         self.obs_matrix = self.get_observation()
         
         return self.obs_matrix
