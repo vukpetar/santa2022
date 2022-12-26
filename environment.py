@@ -66,8 +66,6 @@ class Santa2022Environment(gym.Env):
             reward (float): amount of reward
         """
 
-        reward = -cost + 1
-
         if cost < 1.10261284:
             reward = 1
         elif cost < 2.27920921:
