@@ -113,6 +113,8 @@ class Santa2022Environment(gym.Env):
         self.conf = new_conf
         if self.image[new_pos[0], new_pos[1], 0] == -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
             cost = 20
+        elif self.image[new_pos[0], new_pos[1], 0] != -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
+            cost = 0
         else:
             cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
         self.total_cost += cost
