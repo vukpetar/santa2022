@@ -101,10 +101,10 @@ class Santa2022Environment(gym.Env):
         self.total_cost += cost
         
         reward = self.get_reward(cost)
-        if self.is_visited_array[new_pos] == 1:
-            self.image[new_pos, :] = -2.0
+        if self.is_visited_array[new_pos[0], new_pos[1]] == 1:
+            self.image[new_pos[0], new_pos[1], :] = -2.0
         else:
-            self.is_visited_array[new_pos] = 1
+            self.is_visited_array[new_pos[0], new_pos[1]] = 1
         obs = self.get_observation()
         
         done = self.current_step > self.max_iter

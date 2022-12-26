@@ -269,7 +269,7 @@ def record_video(
 
     obs = eval_env.reset()
     for _ in range(video_length):
-        action, _ = model.predict(obs)
+        action, _ = model.predict(obs, deterministic=True)
         obs, _, _, _ = eval_env.step(action)
 
 
