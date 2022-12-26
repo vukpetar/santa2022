@@ -87,7 +87,7 @@ class Santa2022Environment(gym.Env):
         else:
             reward = -2.0
 
-        if np.sum(self.is_visited_array == 0) == 0:
+        if np.sum(self.is_visited_array) >= self.max_iter-1:
             reward += 10
         
         return reward
@@ -113,8 +113,6 @@ class Santa2022Environment(gym.Env):
         self.conf = new_conf
         if self.image[new_pos[0], new_pos[1], 0] == -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
             cost = 20
-        elif self.image[new_pos[0], new_pos[1], 0] != -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
-            cost = 0
         else:
             cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
         self.total_cost += cost
@@ -153,11 +151,11 @@ class Santa2022Environment(gym.Env):
         
         self.current_step = 0
         self.total_cost = 0
-        if np.sum(self.is_visited_array == 0) == 0:
-            self.is_visited_array = np.zeros(self.image.shape[:2])
-            self.image = self.original_image.copy()
-            conf_index = np.random.randint(low=0, high=len(self.starting_confs))
-            self.conf = self.starting_confs[conf_index].copy()
+        # if np.sum(self.is_visited_array == 0) == 0:
+        self.is_visited_array = np.zeros(self.image.shape[:2])
+        self.image = self.original_image.copy()
+        conf_index = np.random.randint(low=0, high=len(self.starting_confs))
+        self.conf = self.starting_confs[conf_index].copy()
 
         self.obs_matrix = self.get_observation()
         
