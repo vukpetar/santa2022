@@ -66,19 +66,31 @@ class Santa2022Environment(gym.Env):
             reward (float): amount of reward
         """
 
-        if cost < 1.10261284:
-            reward = 1
-        elif cost < 2.27920921:
+        if cost < 1.022454:
+            reward = 2
+        elif cost < 1.25961896:
+            reward = 1.
+        elif cost < 1.60767313:
+            reward = 0.8
+        elif cost < 2.08024453:
+            reward = 0.5
+        elif cost < 2.78226722:
             reward = 0.1
-        elif cost < 10.3771783:
+        elif cost < 4.1503211:
             reward = -0.1
-        else:
+        elif cost < 11.50211641:
+            reward = -0.5
+        elif cost < 13.9738397:
+            reward = -0.8
+        elif cost < 16.91848841:
             reward = -1.0
+        else:
+            reward = -2.0
 
         if np.sum(self.is_visited_array == 0) == 0:
             reward += 10
         
-        return reward
+        return cost
 
 
     def step(self, action: np.array) -> List[Union[np.array, float, bool, Dict]]:
@@ -100,7 +112,7 @@ class Santa2022Environment(gym.Env):
         new_pos = cartesian_to_array(*get_position(np.asarray(new_conf)))
         self.conf = new_conf
         if self.image[new_pos[0], new_pos[1], 0] == -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
-            cost = 10
+            cost = 20
         else:
             cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
         self.total_cost += cost
