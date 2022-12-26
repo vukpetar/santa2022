@@ -67,7 +67,7 @@ class Santa2022Environment(gym.Env):
         """
 
         if cost < 1.022454:
-            reward = 2
+            reward = 2.0
         elif cost < 1.25961896:
             reward = 1.
         elif cost < 1.60767313:
@@ -90,7 +90,7 @@ class Santa2022Environment(gym.Env):
         if np.sum(self.is_visited_array == 0) == 0:
             reward += 10
         
-        return cost
+        return reward
 
 
     def step(self, action: np.array) -> List[Union[np.array, float, bool, Dict]]:
