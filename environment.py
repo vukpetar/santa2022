@@ -72,7 +72,7 @@ class Santa2022Environment(gym.Env):
             reward = 0.1
         elif cost < 10.3771783:
             reward = -0.1
-        elif cost < 16.73248463:
+        else:
             reward = -1.0
 
         if np.sum(self.is_visited_array == 0) == 0:
