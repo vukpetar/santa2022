@@ -54,7 +54,7 @@ class Santa2022Environment(gym.Env):
         
         self.observation_space = spaces.Dict({
             'image': spaces.Box(
-                low=-2.0, high=1.0, shape=self.image.shape, dtype=np.float32
+                low=-1.0, high=1.0, shape=self.image.shape, dtype=np.float32
             ),
             'conf': spaces.Box(low=0.0, high=64.0, shape=(self.conf_len*2,), dtype=np.float32)
         })
@@ -65,14 +65,7 @@ class Santa2022Environment(gym.Env):
         Returns:
             reward (float): amount of reward
         """
-        if cost < 1.06:
-            reward = 1.0
-        elif cost < 1.71:
-            reward = 0.1
-        elif cost < 3.03:
-            reward = -0.1
-        else:
-            reward = -1.0
+        reward = -cost + 1
 
         if np.sum(self.is_visited_array == 0) == 0:
             reward += 10
@@ -94,15 +87,19 @@ class Santa2022Environment(gym.Env):
         """
         self.current_step += 1
         old_conf = self.conf.copy()
+        old_pos = cartesian_to_array(*get_position(np.asarray(old_conf)))
         new_conf = self._take_action(action).copy()
         new_pos = cartesian_to_array(*get_position(np.asarray(new_conf)))
         self.conf = new_conf
-        cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
+        if self.image[new_pos[0], new_pos[1], 0] == -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
+            cost = 10
+        else:
+            cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
         self.total_cost += cost
         
         reward = self.get_reward(cost)
         if self.is_visited_array[new_pos[0], new_pos[1]] == 1:
-            self.image[new_pos[0], new_pos[1], :] = -2.0
+            self.image[new_pos[0], new_pos[1], :] = -1.0
         else:
             self.is_visited_array[new_pos[0], new_pos[1]] = 1
         obs = self.get_observation()
