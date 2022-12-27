@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import numba as nb
+import scipy.signal
 
 import gym
 from stable_baselines3.common.vec_env import VecVideoRecorder, DummyVecEnv
@@ -291,3 +292,19 @@ def show_videos(video_path: str="", prefix: str=""):
                     <source src="data:video/mp4;base64,{}" type="video/mp4" />
                 </video>""".format(mp4, video_b64.decode("ascii")))
     ipythondisplay.display(ipythondisplay.HTML(data="<br>".join(html)))
+
+
+def discounted_cumulative_sums(x: np.array, discount: float) -> np.array:
+    """Discounted cumulative sums of vectors for computing
+    rewards-to-go and advantage estimates
+
+    Args:
+        x (np.array): Input array of rewards.
+        discount (float): Discount factor
+
+    Returns:
+        advantages (np.array): Array of advantages
+    """
+
+    advantages = scipy.signal.lfilter([1], [1, float(-discount)], x[::-1], axis=0)[::-1]
+    return advantages

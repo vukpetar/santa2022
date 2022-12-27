@@ -141,7 +141,7 @@ class Santa2022Environment(gym.Env):
         """
         return self.new_confs[action]
         
-    def reset(self):
+    def reset(self, conf=None):
         """Resets environment on initial state.
 
         Returns:
@@ -155,7 +155,10 @@ class Santa2022Environment(gym.Env):
         self.is_visited_array = np.zeros(self.image.shape[:2])
         self.image = self.original_image.copy()
         conf_index = np.random.randint(low=0, high=len(self.starting_confs))
-        self.conf = self.starting_confs[conf_index].copy()
+        if conf is None:
+            self.conf = self.starting_confs[conf_index].copy()
+        else:
+            self.conf = conf.copy()
 
         self.obs_matrix = self.get_observation()
         
