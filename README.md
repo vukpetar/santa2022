@@ -53,5 +53,5 @@ The code in this repository consists of two python files and one Jupyter Noteboo
 | ---------------------------------------- | -------------------|
 | Create custom gym environment            | :heavy_check_mark: |
 | Train PPO                                | :heavy_check_mark: |
-| Create custom PPO algorithm              | :x:                |
-| Create RL Agent as Graph Neural Network  | :x:                |
+| Train offline Neural Network (NN)        | :heavy_check_mark: |
+| Train transformers as Actor-Critic NNs   | :x:                |
