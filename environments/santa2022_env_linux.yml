@@ -1,21 +1,22 @@
 name: santa2022
 channels:
-  - pytorch
   - conda-forge
   - anaconda
   - defaults
 dependencies:
-  - python=3.8
-  - numpy==1.22.4
-  - scipy==1.7.3
-  - Cython==0.29.30
-  - ipykernel==6.9.1
-  - python-dotenv==0.8.2
-  - networkx==2.8.4
-  - pip==22.1.2
+  - python=3.9
+  - pylint==2.15.9
+  - numpy==1.23.5
+  - scipy==1.9.3
+  - Cython==0.29.32
+  - ipykernel==6.19.3
+  - jupyterlab==3.5.2
+  - networkx==2.8.8
+  - pip==22.3.1
   - pip:
-      - torch==1.10.2
-      - torchvision==0.11.3
-      - stable-baselines3==1.6.0
-      - typing_extensions
-      - scikit-learn==0.22.2
+      - typing_extensions==4.4.0
+      - scikit-learn==1.2.0
+      - stable-baselines3==1.6.2
+      - sb3-contrib==1.6.2
+      - numba==0.56.4
+      - imageio-ffmpeg-0.4.7

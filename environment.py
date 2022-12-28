@@ -22,8 +22,8 @@ class Santa2022Environment(gym.Env):
     def __init__(
         self,
         image: np.array,
-        starting_conf = [[64, 0], [-32, 0], [-16, 0], [-8, 0], [-4, 0], [-2, 0], [-1, 0], [-1, 0]],
-        max_iter: int = 1e9
+        starting_confs = [[[64, 0], [-32, 0], [-16, 0], [-8, 0], [-4, 0], [-2, 0], [-1, 0], [-1, 0]]],
+        max_iter: int = 500
     ):
         """Constructs all the necessary attributes for the Santa2022Environment object.
 
@@ -35,33 +35,60 @@ class Santa2022Environment(gym.Env):
             None
         """
         super(Santa2022Environment, self).__init__()
-        self.new_confs = []
         self.max_iter = max_iter
         self.current_step = 0
         self.total_cost = 0
-        self.image = image
-        self.is_visited_array = np.zeros(self.image.shape[:2], dtype=np.bool_)
-        self.is_visited_array[128, 128] = 1
-        self.obs_shape = [3**len(starting_conf), 3]
-        self.starting_conf = starting_conf
-        self.conf = starting_conf.copy()
+        self.image = image.copy()
+        self.original_image = image.copy()
+        self.conf_len = len(starting_confs[0])
+        self.is_visited_array = np.zeros(self.image.shape[:2])
+
+        conf_index = np.random.randint(low=0, high=len(starting_confs))
+        self.starting_confs = starting_confs
+        self.starting_conf = starting_confs[conf_index]
+        self.conf = self.starting_conf.copy()
+        self.new_confs = [[]]*(3**self.conf_len)
         self.obs_matrix = self.get_observation()
         
-        self.action_space = spaces.Discrete(2**8)
+        self.action_space = spaces.Discrete(3**self.conf_len)
         
-        self.observation_space = spaces.Box(
-          low=-50, high=50, shape=self.obs_shape, dtype=np.float16)
+        self.observation_space = spaces.Dict({
+            'image': spaces.Box(
+                low=-1.0, high=1.0, shape=self.image.shape, dtype=np.float32
+            ),
+            'conf': spaces.Box(low=0.0, high=64.0, shape=(self.conf_len*2,), dtype=np.float32)
+        })
         
-    def get_reward(self, cost: float, new_pos: List[int]) -> float:
+    def get_reward(self, cost: float) -> float:
         """Reward calculation function
 
         Returns:
             reward (float): amount of reward
         """
-        reward = cost + 3
-        
-        if self.is_visited_array[new_pos]:
-            reward -= 30
+
+        if cost < 1.022454:
+            reward = 2.0
+        elif cost < 1.25961896:
+            reward = 1.
+        elif cost < 1.60767313:
+            reward = 0.8
+        elif cost < 2.08024453:
+            reward = 0.5
+        elif cost < 2.78226722:
+            reward = 0.1
+        elif cost < 4.1503211:
+            reward = -0.1
+        elif cost < 11.50211641:
+            reward = -0.5
+        elif cost < 13.9738397:
+            reward = -0.8
+        elif cost < 16.91848841:
+            reward = -1.0
+        else:
+            reward = -2.0
+
+        if np.sum(self.is_visited_array) >= self.max_iter-1:
+            reward += 10
         
         return reward
 
@@ -78,20 +105,27 @@ class Santa2022Environment(gym.Env):
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
+        self.current_step += 1
         old_conf = self.conf.copy()
-        new_conf = self._take_action(action)
-        new_pos = cartesian_to_array(*transform_conf_to_pos(new_conf), self.image.shape)
+        old_pos = cartesian_to_array(*get_position(np.asarray(old_conf)))
+        new_conf = self._take_action(action).copy()
+        new_pos = cartesian_to_array(*get_position(np.asarray(new_conf)))
         self.conf = new_conf
-        cost = step_cost(old_conf, new_conf, self.image)
+        if self.image[new_pos[0], new_pos[1], 0] == -1 and self.image[old_pos[0], old_pos[1], 0] == -1:
+            cost = 20
+        else:
+            cost = step_cost(np.asarray(old_conf), np.asarray(new_conf), self.image)
         self.total_cost += cost
         
-        is_done = np.sum(self.is_visited_array == 0) == 0
-        done = is_done or (self.current_step > self.max_iter)
-        
-        reward = self.get_reward(cost, new_pos)
+        reward = self.get_reward(cost)
+        if self.is_visited_array[new_pos[0], new_pos[1]] == 1:
+            self.image[new_pos[0], new_pos[1], :] = -1.0
+        else:
+            self.is_visited_array[new_pos[0], new_pos[1]] = 1
         obs = self.get_observation()
-        self.is_visited_array[new_pos] = 1
         
+        done = self.current_step > self.max_iter
+
         info = {}
         return obs, reward, done, info
     
@@ -107,7 +141,7 @@ class Santa2022Environment(gym.Env):
         """
         return self.new_confs[action]
         
-    def reset(self):
+    def reset(self, conf=None):
         """Resets environment on initial state.
 
         Returns:
@@ -117,9 +151,15 @@ class Santa2022Environment(gym.Env):
         
         self.current_step = 0
         self.total_cost = 0
+        # if np.sum(self.is_visited_array == 0) == 0:
         self.is_visited_array = np.zeros(self.image.shape[:2])
-        self.is_visited_array[128, 128] = 1
-        self.conf = self.starting_conf
+        self.image = self.original_image.copy()
+        conf_index = np.random.randint(low=0, high=len(self.starting_confs))
+        if conf is None:
+            self.conf = self.starting_confs[conf_index].copy()
+        else:
+            self.conf = conf.copy()
+
         self.obs_matrix = self.get_observation()
         
         return self.obs_matrix
@@ -146,23 +186,19 @@ class Santa2022Environment(gym.Env):
         Returns:
             None
         """
-        mask_img = self.image * self.is_visited_array[:, :, np.newaxis]
+        mask_img = self.original_image * self.is_visited_array[:, :, np.newaxis]
         render_img = (mask_img * 255).astype(np.uint8)
         return render_img
     
     def get_observation(self):
-        observation = []
-        self.new_confs = []
 
         confs = get_possible_confs(self.conf)
-        for new_conf in product(*confs):
-            self.new_confs.append(list(new_conf))
+        conf_obs = np.array(self.conf).reshape(-1) / 64
 
-            from_position = cartesian_to_array(*transform_conf_to_pos(self.conf), self.image.shape)
-            to_position = cartesian_to_array(*transform_conf_to_pos(new_conf), self.image.shape)
-
-            r_cost = reconfiguration_cost(self.conf, new_conf)
-            c_cost = color_cost(from_position, to_position, self.image)
-            observation.append([r_cost, c_cost, self.is_visited_array[to_position]])
+        for index, new_conf in enumerate(product(*confs)):
+            self.new_confs[index] = list(new_conf)
             
-        return observation
+        return {
+            "image": self.image,
+            "conf": conf_obs
+        }
